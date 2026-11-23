@@ -1,5 +1,7 @@
-// Sound for Solara Bay, made only with WebAudio oscillators and noise.
-// Nothing is fetched: every effect is synthesised when it is played.
+// Solara Bay v2 3D sound, made only with WebAudio oscillators and noise.
+// Nothing is fetched: every effect is synthesised when it is played, so
+// the game stays fully offline. The music is a short 1980s-style synth
+// bass line, played quietly under the engine and the police siren.
 export function createAudio() {
   let context = null;
   let master = null;
@@ -9,8 +11,9 @@ export function createAudio() {
   let muted = false;
   let musicTimer = 0;
   let musicStep = 0;
+  const MASTER_VOLUME = 0.22;
 
-  const MUSIC_NOTES = [110, 0, 130.8, 0, 98, 0, 130.8, 146.8];
+  const MUSIC_NOTES = [110, 0, 130.8, 0, 98, 0, 130.8, 146.8, 110, 0, 164.8, 0, 146.8, 130.8, 98, 0];
 
   function ensure() {
     if (context) return true;
@@ -19,7 +22,7 @@ export function createAudio() {
       if (!AudioContext) return false;
       context = new AudioContext();
       master = context.createGain();
-      master.gain.value = 0.22;
+      master.gain.value = MASTER_VOLUME;
       master.connect(context.destination);
     } catch {
       return false;
@@ -85,19 +88,21 @@ export function createAudio() {
 
   return {
     unlock() { ensure(); if (context && context.state === 'suspended') context.resume().catch(() => {}); },
-    toggleMute() { muted = !muted; if (master) master.gain.value = muted ? 0 : 0.22; return muted; },
+    toggleMute() { muted = !muted; if (master) master.gain.value = muted ? 0 : MASTER_VOLUME; return muted; },
     isMuted() { return muted; },
     pickup() { tone(660, 0.12, 'sine', 0.25); setTimeout(() => tone(880, 0.16, 'sine', 0.25), 90); },
+    jump() { tone(280, 0.14, 'sine', 0.14, 520); },
     coin() { tone(990, 0.1, 'triangle', 0.2); },
     punch() { noise(0.09, 0.3, 900); },
     shoot() { noise(0.14, 0.4, 2400); tone(180, 0.1, 'square', 0.12, 60); },
     crash() { noise(0.3, 0.4, 500); },
+    ragdoll() { noise(0.4, 0.35, 700); tone(140, 0.35, 'sawtooth', 0.14, 70); },
     sirenTick(dt, wanted) {
       if (!ensure() || muted || wanted < 1) { if (engineGain) engineGain.gain.value = 0; return; }
       sirenTimer += dt;
       if (sirenTimer > 0.55) {
         sirenTimer = 0;
-        tone(sirenTimer === 0 ? 700 : 700, 0.5, 'sine', 0.07, 950);
+        tone(700, 0.5, 'sine', 0.07, 950);
       }
     },
     engine(speed01, driving) {

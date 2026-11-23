@@ -1,13 +1,19 @@
-// Keyboard, mouse and touch input for Solara Bay.
-// Held keys are read every frame; one-shot presses (start, pause, enter car,
-// punch, shoot) are queued as flags and taken once, so a press between frames
-// is never lost and never counted twice.
+// Solara Bay v2 3D input: keyboard, mouse orbit and touch.
+// Held keys are read every frame; one-shot presses (start, pause, enter
+// car, punch, shoot, jump) are queued as flags and taken once, so a press
+// between frames is never lost and never counted twice. Dragging with the
+// mouse orbits the third-person camera; the orbit delta is exposed so the
+// renderer can turn the camera without pointer lock (which headless
+// browsers and the screenshot runs cannot grant). Losing the window
+// clears every held key and any half-finished orbit drag, so the game
+// never keeps driving or spinning on its own after an alt-tab.
 export const ACTION_CONFIRM = 1;
 export const ACTION_PAUSE = 2;
 export const ACTION_ENTER = 4;
 export const ACTION_PUNCH = 8;
 export const ACTION_SHOOT = 16;
 export const ACTION_MISSION = 32;
+export const ACTION_JUMP = 64;
 
 const UP = new Set(['ArrowUp', 'KeyW']);
 const DOWN = new Set(['ArrowDown', 'KeyS']);
@@ -24,8 +30,11 @@ const MISSION = new Set(['KeyM']);
 export function createInput(target) {
   const held = { up: false, down: false, left: false, right: false, run: false };
   let actions = 0;
-  let mouseX = 0;
-  let mouseY = 0;
+  let orbitDX = 0;
+  let orbitDY = 0;
+  let dragging = false;
+  let lastX = 0;
+  let lastY = 0;
   let mouseDown = false;
 
   function press(code, event) {
@@ -59,23 +68,38 @@ export function createInput(target) {
   window.addEventListener('blur', () => {
     held.up = held.down = held.left = held.right = held.run = false;
     mouseDown = false;
+    dragging = false;
+    // Drop any half-finished orbit drag, or the camera keeps turning
+    // after the window comes back.
+    orbitDX = 0;
+    orbitDY = 0;
   });
+  target.addEventListener('contextmenu', (event) => event.preventDefault());
   target.addEventListener('pointerdown', (event) => {
-    mouseX = event.clientX;
-    mouseY = event.clientY;
+    dragging = true;
+    lastX = event.clientX;
+    lastY = event.clientY;
     mouseDown = true;
     actions |= ACTION_CONFIRM;
   });
-  target.addEventListener('pointerup', () => { mouseDown = false; });
+  target.addEventListener('pointerup', () => { mouseDown = false; dragging = false; });
   target.addEventListener('pointermove', (event) => {
-    mouseX = event.clientX;
-    mouseY = event.clientY;
+    if (!dragging) return;
+    orbitDX += event.clientX - lastX;
+    orbitDY += event.clientY - lastY;
+    lastX = event.clientX;
+    lastY = event.clientY;
   });
 
   return {
     held,
-    mouse() { return { x: mouseX, y: mouseY, down: mouseDown }; },
-    // Steering: -1 left, 1 right. Throttle: -1 brake/reverse, 1 accelerate.
+    mouse() { return { x: lastX, y: lastY, down: mouseDown }; },
+    takeOrbit() {
+      const d = { dx: orbitDX, dy: orbitDY };
+      orbitDX = 0;
+      orbitDY = 0;
+      return d;
+    },
     steer() { return (held.right ? 1 : 0) - (held.left ? 1 : 0); },
     throttle() { return (held.up ? 1 : 0) - (held.down ? 1 : 0); },
     moveX() { return (held.right ? 1 : 0) - (held.left ? 1 : 0); },

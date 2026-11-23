@@ -1,6 +1,10 @@
-// Traffic cars and pedestrians for Solara Bay.
-// Traffic drives along the road grid, turns at intersections, and slows
-// for the car ahead. Pedestrians stroll on the sidewalks and flee danger.
+// Solara Bay v2 3D traffic: cars follow the road grid, turn at
+// intersections, and slow for the car ahead. Pedestrians stroll on the
+// sidewalks and flee danger. The simulation is 2D (x, y on the city
+// plane); the 3D renderer maps y to -z. A pedestrian hit by a fast car
+// is flagged ragdoll so the renderer can throw them with the physics.
+// Final pass: a car waiting behind another one holds its heading instead
+// of turning on the spot at the intersection.
 import { WORLD } from './config.js';
 
 const ROAD_CENTERS = [200, 600, 1000, 1400, 1800, 2200, 2600, 3000];
@@ -12,13 +16,10 @@ function nearestCenter(value) {
 }
 
 export function updateTraffic(state, dt, random) {
-  // Cars: follow their road axis, pick a new direction at intersections.
   for (const car of state.cars) {
     if (car.kind !== 'traffic') continue;
-    // Slow for a car ahead on the same lane.
     let ahead = false;
     for (const other of state.cars) {
-      // Traffic slows for the player's car too, instead of driving through it.
       if (other === car) continue;
       const dx = other.x - car.x;
       const dy = other.y - car.y;
@@ -36,27 +37,24 @@ export function updateTraffic(state, dt, random) {
       car.x += (nearestCenter(car.x) + (car.dir > 0 ? 22 : -22) - car.x) * Math.min(1, dt * 2);
       car.angle = car.dir > 0 ? Math.PI / 2 : -Math.PI / 2;
     }
-    // At an intersection, sometimes turn onto the cross road.
     const nearX = Math.abs(car.x - nearestCenter(car.x)) < 12;
     const nearY = Math.abs(car.y - nearestCenter(car.y)) < 12;
-    if (nearX && nearY && random() < dt * 0.25) {
-      if (car.axis === 'x') {
-        car.axis = 'y';
-        car.dir = random() < 0.5 ? 1 : -1;
-      } else {
-        car.axis = 'x';
-        car.dir = random() < 0.5 ? 1 : -1;
-      }
+    // Only a moving car turns: a stopped car waiting for the one ahead
+    // would otherwise spin on the spot at the intersection.
+    if (car.speed > 10 && nearX && nearY && random() < dt * 0.25) {
+      if (car.axis === 'x') { car.axis = 'y'; car.dir = random() < 0.5 ? 1 : -1; }
+      else { car.axis = 'x'; car.dir = random() < 0.5 ? 1 : -1; }
     }
-    // Wrap around the far edge so traffic never runs out.
     if (car.x < 60) { car.x = 60; car.dir = 1; }
     if (car.x > WORLD.width - 60) { car.x = WORLD.width - 60; car.dir = -1; }
     if (car.y < 60) { car.y = 60; car.dir = 1; }
     if (car.y > WORLD.height - 60) { car.y = WORLD.height - 60; car.dir = -1; }
   }
 
-  // Pedestrians: wander, keep to sidewalks, flee a speeding car or a shot.
   for (const ped of state.peds) {
+    if (ped.ragdoll) continue;
+    // Advance the walk cycle so the 3D legs actually swing while strolling.
+    ped.walkPhase += dt * ped.speed * 0.06;
     if (ped.flee > 0) {
       ped.flee -= dt;
       const dx = ped.x - state.player.x;

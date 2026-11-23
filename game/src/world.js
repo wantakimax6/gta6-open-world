@@ -1,7 +1,9 @@
-// Solara Bay world: the city, the player, cars, pedestrians, rivals,
-// wanted level, health and cash. No drawing and no browser here: step()
-// advances one fixed step and returns what happened as bit flags.
-import { CAR, CITY, PLAYER, POLICE, WANTED, WORLD, MISSION_REWARDS } from './config.js';
+// Solara Bay v2 3D world: the city, the player, cars, pedestrians, rivals,
+// wanted level, health and cash. The simulation runs on the v1 city plane
+// (x, y in sim units); height is a separate z axis for jumping and the
+// ragdoll. step() advances one fixed step and returns what happened as
+// bit flags. The 3D renderer reads this state and never writes it.
+import { CAR, CITY, PLAYER, POLICE, RAGDOLL_RECOVER_SECONDS, WANTED, WORLD, MISSION_REWARDS } from './config.js';
 import { createMissions } from './missions.js';
 import { updateTraffic } from './traffic.js';
 import { updatePolice } from './police.js';
@@ -13,6 +15,7 @@ export const EVENT_MISSION = 8;
 export const EVENT_CRIME = 16;
 export const EVENT_BUSTED = 32;
 export const EVENT_PICKUP = 64;
+export const EVENT_RAGDOLL = 128;
 
 const ROAD_CENTERS = [200, 600, 1000, 1400, 1800, 2200, 2600, 3000];
 const CAR_COLORS = ['#e5534b', '#4a7fc9', '#f2c94c', '#7fb069', '#c94a6e', '#e8e8e8', '#2a2f3a', '#ff8c42'];
@@ -31,7 +34,6 @@ export function isOnRoad(x, y) {
 export function createWorld(random) {
   const buildings = [];
   const parks = [];
-  // One block per gap between roads; each block holds buildings or a park.
   for (let bx = 0; bx < ROAD_CENTERS.length - 1; bx += 1) {
     for (let by = 0; by < ROAD_CENTERS.length - 1; by += 1) {
       const x0 = ROAD_CENTERS[bx] + WORLD.roadWidth / 2 + 14;
@@ -50,23 +52,24 @@ export function createWorld(random) {
       }
     }
   }
-  // Re-colour buildings with a seeded shuffle so the city is not striped.
   const roofPalette = ['#c96f4a', '#4a7fc9', '#c9a44a', '#7a4ac9', '#4ac9a0', '#c94a6e', '#8a6d4b', '#5b7a99'];
   for (const b of buildings) b.color = roofPalette[Math.floor(random() * roofPalette.length)];
 
   const missions = createMissions();
   const state = {
     buildings, parks,
-    player: { x: 600, y: 640, angle: -Math.PI / 2, speed: 0, health: PLAYER.health, cash: 0, ammo: PLAYER.startAmmo, inCar: false, car: null, punchTimer: 0, shootTimer: 0, invuln: 0 },
+    player: { x: 600, y: 640, z: 0, vz: 0, grounded: true, angle: -Math.PI / 2, speed: 0, health: PLAYER.health, cash: 0, ammo: PLAYER.startAmmo, inCar: false, car: null, punchTimer: 0, shootTimer: 0, invuln: 0, ragdoll: false, ragdollTimer: 0, ragdollImpulse: null, walkPhase: 0 },
     cars: [], peds: [], rivals: [], police: [], particles: [], pickups: [],
     wanted: 0, wantedTimer: 0, crimeTimer: 0, arrestTimer: 0,
     missionIndex: 0, mission: missions.current(0), missionTimer: 0, missionHold: 0,
+    alert: '', alertTimer: 0,
     score: 0, elapsed: 0, busted: false, over: false, overReason: '',
     camera: { x: 600, y: 640 },
+    timeOfDay: 0.32,
   };
 
   function spawnCar(x, y, angle, color, kind) {
-    const car = { x, y, angle, speed: 0, color: color || CAR_COLORS[Math.floor(random() * CAR_COLORS.length)], kind: kind || 'parked', axis: 'x', dir: 1, cruise: 120 + random() * 80 };
+    const car = { x, y, angle, speed: 0, color: color || CAR_COLORS[Math.floor(random() * CAR_COLORS.length)], kind: kind || 'parked', axis: 'x', dir: 1, cruise: 120 + random() * 80, wheelSpin: 0, steerVis: 0 };
     state.cars.push(car);
     return car;
   }
@@ -88,13 +91,17 @@ export function createWorld(random) {
     const center = ROAD_CENTERS[Math.floor(random() * ROAD_CENTERS.length)];
     const along = 100 + random() * (WORLD.width - 200);
     const horizontal = random() < 0.5;
-    return { x: horizontal ? along : center + 60, y: horizontal ? center + 60 : along, angle: random() * Math.PI * 2, speed: 28 + random() * 30, color: ['#f2c94c', '#e8e8e8', '#4ac9a0', '#c94a6e'][Math.floor(random() * 4)], flee: 0 };
+    return { x: horizontal ? along : center + 60, y: horizontal ? center + 60 : along, angle: random() * Math.PI * 2, speed: 28 + random() * 30, color: ['#f2c94c', '#e8e8e8', '#4ac9a0', '#c94a6e'][Math.floor(random() * 4)], flee: 0, ragdoll: false, ragdollImpulse: null, walkPhase: random() * 6 };
   }
 
   function spawnRival(x, y) {
-    const rival = { x, y, angle: 0, health: 40, speed: 95, shootTimer: 1 + random(), alive: true };
+    const rival = { x, y, angle: 0, health: 40, speed: 95, shootTimer: 1 + random(), alive: true, walkPhase: random() * 6 };
     state.rivals.push(rival);
     return rival;
+  }
+
+  function spawnDrop(x, y) {
+    state.pickups.push({ x, y, kind: 'drop', amount: 100, taken: false });
   }
 
   function addParticle(x, y, color, count) {
@@ -108,6 +115,15 @@ export function createWorld(random) {
     state.wanted = Math.min(WANTED.max, state.wanted + amount);
     state.crimeTimer = 0;
     state.wantedTimer = 0;
+  }
+
+  // Short red banner in the HUD (mission 8's snitch leaks). Shows for
+  // 3.5 seconds, then the HUD hides it when the timer runs out. The timer
+  // is ticked down in step(), right before the mission update that fires
+  // new alerts, so a fresh alert always gets its full 3.5 seconds.
+  function setAlert(text) {
+    state.alert = text;
+    state.alertTimer = 3.5;
   }
 
   function buildingHit(x, y, radius) {
@@ -132,17 +148,29 @@ export function createWorld(random) {
     return true;
   }
 
+  function triggerPlayerRagdoll(impulse) {
+    const p = state.player;
+    if (p.ragdoll || p.inCar || p.invuln > 0) return false;
+    p.ragdoll = true;
+    p.ragdollTimer = 0;
+    p.ragdollImpulse = impulse;
+    p.health -= 12;
+    p.invuln = 1.4;
+    return true;
+  }
+
   function reset() {
     const p = state.player;
-    p.x = 600; p.y = 640; p.angle = -Math.PI / 2; p.speed = 0;
+    p.x = 600; p.y = 640; p.z = 0; p.vz = 0; p.grounded = true; p.angle = -Math.PI / 2; p.speed = 0;
     p.health = PLAYER.health; p.cash = 0; p.ammo = PLAYER.startAmmo;
     p.inCar = false; p.car = null; p.punchTimer = 0; p.shootTimer = 0; p.invuln = 0;
+    p.ragdoll = false; p.ragdollTimer = 0; p.ragdollImpulse = null; p.walkPhase = 0;
     state.cars = []; state.peds = []; state.rivals = []; state.police = [];
     state.particles = []; state.pickups = [];
     state.wanted = 0; state.wantedTimer = 0; state.crimeTimer = 0; state.arrestTimer = 0;
-    state.missionIndex = 0; state.mission = missions.current(0); state.missionTimer = 0; state.missionHold = 0;
+    state.missionIndex = 0; state.mission = missions.current(0); state.missionTimer = 0; state.missionHold = 0; state.alert = ''; state.alertTimer = 0;
     state.score = 0; state.elapsed = 0; state.busted = false; state.over = false; state.overReason = '';
-    // Parked cars near the start, traffic, pedestrians and a few cash pickups.
+    state.timeOfDay = 0.32;
     spawnCar(700, 600, 0, '#e5534b', 'parked');
     spawnCar(600, 500, Math.PI / 2, '#4a7fc9', 'parked');
     spawnCar(2600, 600, 0, '#ff8c42', 'parked');
@@ -172,6 +200,7 @@ export function createWorld(random) {
     state.player.inCar = true;
     state.player.car = car;
     state.player.x = car.x; state.player.y = car.y; state.player.angle = car.angle;
+    state.player.z = 0; state.player.vz = 0; state.player.grounded = true;
     return true;
   }
 
@@ -190,7 +219,7 @@ export function createWorld(random) {
 
   function punch() {
     const p = state.player;
-    if (p.punchTimer > 0 || p.inCar) return 0;
+    if (p.punchTimer > 0 || p.inCar || p.ragdoll) return 0;
     p.punchTimer = PLAYER.punchCooldown;
     let events = 0;
     for (const rival of state.rivals) {
@@ -207,7 +236,7 @@ export function createWorld(random) {
 
   function shoot() {
     const p = state.player;
-    if (p.shootTimer > 0 || p.ammo <= 0) return 0;
+    if (p.shootTimer > 0 || p.ammo <= 0 || p.ragdoll) return 0;
     p.shootTimer = PLAYER.shootCooldown;
     p.ammo -= 1;
     addWanted(WANTED.shoot);
@@ -229,13 +258,15 @@ export function createWorld(random) {
   function step(dt, input, actions) {
     const p = state.player;
     let events = 0;
+    // A finished run (busted or dead) does not advance any further.
+    if (state.over) return 0;
     state.elapsed += dt;
+    state.timeOfDay = (state.timeOfDay + dt / 240) % 1;
     if (p.punchTimer > 0) p.punchTimer -= dt;
     if (p.shootTimer > 0) p.shootTimer -= dt;
     if (p.invuln > 0) p.invuln -= dt;
     state.crimeTimer += dt;
 
-    // One-shot actions.
     if (actions.enter) {
       if (p.inCar) exitCar();
       else if (enterCar()) events |= EVENT_CRIME;
@@ -243,17 +274,19 @@ export function createWorld(random) {
     if (actions.punch) events |= punch();
     if (actions.shoot) events |= shoot();
 
-    if (p.inCar && p.car) {
+    // Ragdoll: the body is down, the player cannot move until it recovers.
+    if (p.ragdoll) {
+      p.ragdollTimer += dt;
+      if (p.ragdollTimer > RAGDOLL_RECOVER_SECONDS) { p.ragdoll = false; p.ragdollTimer = 0; p.ragdollImpulse = null; }
+    } else if (p.inCar && p.car) {
       const car = p.car;
       const throttle = input.throttle();
       const steer = input.steer();
+      car.steerVis = steer;
       if (throttle > 0) car.speed += CAR.accel * dt;
       else if (throttle < 0) car.speed -= (car.speed > 0 ? CAR.brake : CAR.reverseAccel) * dt * -throttle;
       else car.speed -= car.speed * 0.9 * dt;
       car.speed = clamp(car.speed, -CAR.maxReverse, CAR.maxSpeed);
-      // Steering grows with speed only up to a point, then stays flat: at
-      // full speed a sharper turn would throw the car into the buildings
-      // on the corner instead of around the intersection.
       if (Math.abs(car.speed) > 4) {
         const steerAuthority = Math.min(1, Math.abs(car.speed) / 220);
         car.angle += steer * CAR.steer * dt * steerAuthority * (car.speed >= 0 ? 1 : -1);
@@ -262,14 +295,24 @@ export function createWorld(random) {
       const ny = car.y + Math.sin(car.angle) * car.speed * dt;
       car.x = clamp(nx, 40, WORLD.width - 40);
       car.y = clamp(ny, 40, WORLD.height - 40);
-      if (pushOutOfBuildings(car, 24)) { car.speed *= 0.7; events |= EVENT_HIT; }
+      // Brushing a building must not trap the car: a flat 0.7x penalty
+      // every step while the car's edge overlaps a wall collapses speed
+      // to ~35, and steering authority scales with speed, so the car can
+      // never turn away again. A hard crash still costs speed; a slow
+      // scrape only costs a little, so the car can pull free.
+      if (pushOutOfBuildings(car, 24)) {
+        car.speed *= Math.abs(car.speed) > 150 ? 0.85 : 0.97;
+        events |= EVENT_HIT;
+      }
       p.x = car.x; p.y = car.y; p.angle = car.angle; p.speed = car.speed;
-      // Running over a pedestrian is a crime, and it hurts.
       for (const ped of state.peds) {
+        if (ped.ragdoll) continue;
         if (Math.abs(car.speed) > 120 && dist2(car.x, car.y, ped.x, ped.y) < 900) {
           ped.flee = 3;
+          ped.ragdoll = true;
+          ped.ragdollImpulse = { x: Math.cos(car.angle) * car.speed, y: Math.sin(car.angle) * car.speed, z: 0 };
           addWanted(WANTED.hitPedestrian);
-          events |= EVENT_CRIME;
+          events |= EVENT_CRIME | EVENT_RAGDOLL;
         }
       }
     } else {
@@ -282,23 +325,43 @@ export function createWorld(random) {
         p.x = clamp(p.x + (mx / len) * speed * dt, 20, WORLD.width - 20);
         p.y = clamp(p.y + (my / len) * speed * dt, 20, WORLD.height - 20);
         pushOutOfBuildings(p, PLAYER.radius);
+        p.walkPhase += dt * speed * 0.055;
       }
       p.speed = mx !== 0 || my !== 0 ? speed : 0;
+      // Jump: Space during play. Gravity pulls back down; landing is flat.
+      if (actions.jump && p.grounded) {
+        p.vz = PLAYER.jumpSpeed;
+        p.grounded = false;
+      }
+      if (!p.grounded) {
+        p.vz -= PLAYER.gravity * dt;
+        p.z += p.vz * dt;
+        if (p.z <= 0) { p.z = 0; p.vz = 0; p.grounded = true; }
+      }
+      // A fast traffic car on foot throws Mara into a ragdoll.
+      for (const car of state.cars) {
+        if (car.kind !== 'traffic') continue;
+        if (Math.abs(car.speed) > PLAYER.ragdollSpeed && dist2(car.x, car.y, p.x, p.y) < 1600) {
+          if (triggerPlayerRagdoll({ x: Math.cos(car.angle) * car.speed, y: Math.sin(car.angle) * car.speed, z: 0 })) {
+            events |= EVENT_HIT | EVENT_RAGDOLL;
+            addParticle(p.x, p.y, '#e5534b', 10);
+          }
+          break;
+        }
+      }
     }
 
-    // Pickups.
     for (const pickup of state.pickups) {
       if (pickup.taken) continue;
       if (dist2(p.x, p.y, pickup.x, pickup.y) < 1600) {
         pickup.taken = true;
-        if (pickup.kind === 'cash') { p.cash += pickup.amount; state.score += pickup.amount; }
+        if (pickup.kind === 'cash' || pickup.kind === 'drop') { p.cash += pickup.amount; state.score += pickup.amount; }
         if (pickup.kind === 'ammo') p.ammo = Math.min(PLAYER.maxAmmo, p.ammo + pickup.amount);
         if (pickup.kind === 'health') p.health = Math.min(PLAYER.health, p.health + pickup.amount);
         events |= EVENT_PICKUP;
       }
     }
 
-    // Rivals fight back on foot.
     for (const rival of state.rivals) {
       if (!rival.alive) continue;
       const dx = p.x - rival.x; const dy = p.y - rival.y;
@@ -307,6 +370,7 @@ export function createWorld(random) {
         rival.angle = Math.atan2(dy, dx);
         rival.x += (dx / d) * rival.speed * dt;
         rival.y += (dy / d) * rival.speed * dt;
+        rival.walkPhase += dt * 6;
         rival.shootTimer -= dt;
         if (d < 260 && rival.shootTimer <= 0) {
           rival.shootTimer = 1.4;
@@ -319,7 +383,6 @@ export function createWorld(random) {
     const policeEvents = updatePolice(state, dt, random, { addWanted, addParticle });
     events |= policeEvents;
 
-    // Wanted decay: hide long enough and the heat cools off.
     if (state.wanted > 0) {
       state.wantedTimer += dt;
       if (state.crimeTimer > 8 && state.wantedTimer > WANTED.decaySeconds && state.police.length === 0) {
@@ -328,8 +391,8 @@ export function createWorld(random) {
       }
     }
 
-    // Missions.
-    const missionEvents = missions.update(state, dt, { spawnRival, addParticle, addWanted });
+    if (state.alertTimer > 0) state.alertTimer -= dt;
+    const missionEvents = missions.update(state, dt, { spawnRival, addParticle, addWanted, spawnDrop, setAlert });
     events |= missionEvents;
     if (missionEvents & EVENT_MISSION) {
       const reward = MISSION_REWARDS[state.missionIndex - 1] || 0;
@@ -337,7 +400,6 @@ export function createWorld(random) {
       state.score += reward;
     }
 
-    // Particles fade.
     for (let i = state.particles.length - 1; i >= 0; i -= 1) {
       const part = state.particles[i];
       part.life -= dt;
@@ -346,7 +408,6 @@ export function createWorld(random) {
       if (part.life <= 0) state.particles.splice(i, 1);
     }
 
-    // Camera follows the player, clamped to the world.
     state.camera.x = clamp(p.x - 640, 0, WORLD.width - 1280);
     state.camera.y = clamp(p.y - 360, 0, WORLD.height - 720);
 
@@ -364,7 +425,7 @@ export function createWorld(random) {
   reset();
   return {
     state, reset, step, enterCar, exitCar, punch, shoot,
-    addWanted, addParticle, spawnRival, spawnCar, spawnTrafficCar,
+    addWanted, addParticle, spawnRival, spawnCar, spawnTrafficCar, spawnDrop,
     buildings, parks, missions,
   };
 }

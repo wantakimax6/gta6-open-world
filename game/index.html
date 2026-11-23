@@ -3,17 +3,109 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Solara Bay — Open World</title>
+<title>Solara Bay 3D — Open World</title>
 <style>
-  html, body { margin: 0; height: 100%; overflow: hidden; background: #11141b; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #0b0e13; font-family: system-ui, -apple-system, sans-serif; }
   #game { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
-  /* Read aloud, never shown: the status line screen readers announce. */
   #status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  #hud { position: fixed; inset: 0; pointer-events: none; display: none; color: #eef1f5; z-index: 5; }
+  .panel-box { background: rgba(8, 12, 18, 0.68); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; backdrop-filter: blur(4px); }
+  #top-left { position: absolute; top: 14px; left: 14px; padding: 10px 14px; min-width: 210px; }
+  #cash { font-size: 26px; font-weight: 800; color: #f2c94c; }
+  #health-bar { width: 170px; height: 10px; background: #2a2f3a; border-radius: 5px; margin-top: 6px; overflow: hidden; }
+  #health-fill { height: 100%; width: 100%; background: linear-gradient(90deg, #4ac9a0, #7cff4a); }
+  #health-text, #ammo { font-size: 13px; color: #c8ced8; margin-top: 4px; }
+  #stars { position: absolute; top: 14px; right: 14px; font-size: 26px; letter-spacing: 2px; color: #ffd23f; text-shadow: 0 2px 8px rgba(0,0,0,0.6); }
+  #stars.hot { color: #ff3b30; }
+  #mission { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); padding: 8px 16px; font-size: 15px; font-weight: 700; max-width: 46vw; text-align: center; }
+  /* Red alert banner (mission 8's snitch leaks): hidden until the HUD shows it. */
+  #alert { position: absolute; top: 64px; left: 50%; transform: translateX(-50%); padding: 8px 16px; font-size: 15px; font-weight: 800; color: #fff; background: rgba(180, 20, 20, 0.88); border: 1px solid #ff6b5e; border-radius: 8px; max-width: 60vw; text-align: center; display: none; }
+  #hold { height: 6px; background: #e8d44d; margin-top: 6px; display: none; border-radius: 3px; }
+  #bottom-left { position: absolute; left: 14px; bottom: 14px; padding: 10px 14px; }
+  #speed { font-size: 20px; font-weight: 800; }
+  #controls-hint { font-size: 12px; color: #8b93a3; margin-top: 2px; }
+  #time { font-size: 13px; color: #c8ced8; margin-top: 4px; }
+  #minimap { position: absolute; right: 14px; bottom: 14px; width: 168px; height: 168px; border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; }
+  #fps { position: absolute; right: 14px; bottom: 192px; font-size: 12px; color: #c8ced8; background: rgba(8,12,18,0.6); padding: 4px 8px; border-radius: 6px; }
+  #crosshair { position: absolute; left: 50%; top: 50%; width: 10px; height: 10px; margin: -5px 0 0 -5px; border: 2px solid rgba(255,255,255,0.85); border-radius: 50%; box-shadow: 0 0 6px rgba(0,0,0,0.7); }
+  .screen-panel { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 10; background: linear-gradient(180deg, rgba(8,10,16,0.25), rgba(8,10,16,0.72)); }
+  .card { background: rgba(10, 14, 20, 0.92); border: 1px solid #f2c94c; border-radius: 14px; padding: 28px 36px; max-width: 640px; text-align: center; color: #eef1f5; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+  .card h1 { margin: 0 0 4px; font-size: 46px; color: #f2c94c; letter-spacing: 2px; }
+  .card h2 { margin: 0 0 10px; font-size: 30px; color: #f2c94c; }
+  .card p { margin: 6px 0; font-size: 16px; line-height: 1.5; color: #d6dce6; }
+  .card .sub { color: #ff7a9e; font-weight: 700; letter-spacing: 3px; font-size: 13px; }
+  .btn { pointer-events: auto; cursor: pointer; background: #f2c94c; color: #111; border: none; border-radius: 8px; padding: 12px 26px; font-size: 17px; font-weight: 800; margin: 10px 6px 0; }
+  .btn:hover { background: #ffd95e; }
+  .btn.ghost { background: transparent; color: #eef1f5; border: 1px solid #8b93a3; }
+  .btn.small { padding: 8px 14px; font-size: 14px; }
+  .btn.active { outline: 3px solid #4ac9a0; }
+  .quality-row { margin-top: 12px; font-size: 14px; color: #c8ced8; }
+  #mute-btn { position: fixed; right: 14px; top: 64px; z-index: 6; }
 </style>
 </head>
 <body>
-<canvas id="game" aria-label="Solara Bay: explore a coastal city on foot and by car, run missions for the Harbor Crew, and outrun the police"></canvas>
+<canvas id="game" aria-label="Solara Bay 3D: explore a coastal city on foot and by car, run missions for the Harbor Crew, and outrun the police"></canvas>
 <p id="status" role="status" aria-live="polite"></p>
+
+<div id="hud">
+  <div id="top-left" class="panel-box">
+    <div id="cash">$0</div>
+    <div id="health-bar"><div id="health-fill"></div></div>
+    <div id="health-text">Health 100</div>
+    <div id="ammo">Ammo 24</div>
+  </div>
+  <div id="stars">☆☆☆☆☆</div>
+  <div id="mission" class="panel-box">Solara Bay<div id="hold"></div></div>
+  <div id="alert" class="panel-box" role="alert"></div>
+  <div id="bottom-left" class="panel-box">
+    <div id="speed">On foot</div>
+    <div id="controls-hint">WASD move/drive · Space jump · E enter car · F shoot · J punch · P pause · drag mouse to look</div>
+    <div id="time">Day</div>
+  </div>
+  <canvas id="minimap" width="168" height="168"></canvas>
+  <div id="fps">60 FPS</div>
+  <div id="crosshair"></div>
+</div>
+<button id="mute-btn" class="btn ghost small" style="pointer-events:auto">Mute</button>
+
+<div id="title-panel" class="screen-panel" style="display:flex">
+  <div class="card">
+    <div class="sub">SOLARA BAY · 3D OPEN WORLD</div>
+    <h1>SOLARA BAY</h1>
+    <p>Mara Voss has come home. Drive, steal cars, run 8 missions for the Harbor Crew — and stay one step ahead of the police in a sun-soaked 1980s coastal city.</p>
+    <p>WASD move / drive · Space jump · E enter car · F shoot · J punch · P pause · drag mouse to look around</p>
+    <button id="start-btn" class="btn">Start game</button>
+    <div class="quality-row">Quality:
+      <button class="btn ghost small" data-quality="low">Low</button>
+      <button class="btn ghost small" data-quality="medium">Medium</button>
+      <button class="btn ghost small active" data-quality="high">High</button>
+    </div>
+  </div>
+</div>
+
+<div id="pause-panel" class="screen-panel">
+  <div class="card">
+    <h2>Paused</h2>
+    <p>The city waits for you. Your progress is saved when a mission ends.</p>
+    <button id="resume-btn" class="btn">Resume</button>
+    <button id="restart-btn" class="btn ghost">Restart</button>
+    <div class="quality-row">Quality:
+      <button class="btn ghost small" data-quality="low">Low</button>
+      <button class="btn ghost small" data-quality="medium">Medium</button>
+      <button class="btn ghost small active" data-quality="high">High</button>
+    </div>
+  </div>
+</div>
+
+<div id="over-panel" class="screen-panel">
+  <div class="card">
+    <h2>Game over</h2>
+    <p id="over-text">Your run in Solara Bay ends here.</p>
+    <p id="over-cash"></p>
+    <button id="play-again-btn" class="btn">Play again</button>
+  </div>
+</div>
+
 <script type="module" src="./src/main.js"></script>
 </body>
 </html>

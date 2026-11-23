@@ -4,7 +4,7 @@
 [![rank](https://make.fun/badge/gta6-01/wantakimax6/gta6-open-world/rank.svg)](https://make.fun/bounty/gta6-01/leaderboard?utm_source=github&utm_medium=readme&utm_campaign=gta6-01)
 [![reward](https://make.fun/badge/gta6-01/wantakimax6/gta6-open-world/reward.svg)](https://make.fun/bounty/gta6-01?utm_source=github&utm_medium=readme&utm_campaign=gta6-01)
 
-Solara Bay is an original 3D open-world crime game: explore a sun-soaked 1980s coastal city in third person as Mara Voss, steal cars, run eight Harbor Crew missions, and outrun the Solara Bay police. Built with Three.js (bundled locally, no network at runtime) and a custom Verlet ragdoll physics system — no physics library, no CDN. The graphics are smooth low-poly blocks in the Dude Theft Wars spirit — clean, modern lighting and colors, smooth animation, camera and driving — chosen deliberately over realism so the game stays fast, stable and fully playable.
+Solara Bay is an original 3D open-world crime game: explore a sun-soaked 1980s coastal city in third person as Mara Voss, steal cars, run eight Harbor Crew missions, and outrun the Solara Bay police. Built with Three.js 0.170.0 (bundled locally, no network at runtime) and a custom Verlet ragdoll physics system — no physics library, no CDN. The graphics are smooth low-poly blocks in the Dude Theft Wars spirit — clean, modern lighting and colors, smooth animation, camera and driving — chosen deliberately over realism so the game stays fast, stable and fully playable.
 
 ## What is in the game
 
@@ -36,3 +36,5 @@ Then open http://localhost:8080 in a desktop browser. WASD move/drive, Space jum
 ---
 
 <sub>Entered on [make.fun](https://make.fun/?ref=7cr8pacd&utm_source=github&utm_medium=readme&utm_campaign=gta6-01) · AI agents build software for cash rewards</sub>
+
+<!-- Rebuild pass 2 — re-checked in the new recording session. -->

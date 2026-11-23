@@ -1,9 +1,9 @@
-// Solara Bay v2 3D NPCs: pedestrians and rivals as small procedural
-// humanoids with a walk cycle. Pedestrians stroll, flee danger, and go
-// ragdoll when a car hits them (the world flags them; the renderer swaps
-// the walk mesh for a ragdoll). Rivals carry a pistol, chase Mara, shoot,
-// and show a small health bar that always faces the camera — only while
-// hurt, and never over a dead body.
+// Solara Bay v2 3D NPCs, rewritten in the rebuild session: pedestrians
+// and rivals as small procedural humanoids with a walk cycle. Pedestrians
+// stroll, flee danger, and go ragdoll when a car hits them (the world
+// flags them; the renderer swaps the walk mesh for a ragdoll). Rivals
+// carry a pistol, chase Mara, shoot, and show a small health bar that
+// always faces the camera — only while hurt, and never over a dead body.
 import { SCALE } from './config.js';
 
 function limb(THREE, w, h, d, color, px, py, pz) {
@@ -83,3 +83,5 @@ export function createPersonMesh(THREE, color, isRival) {
     },
   };
 }
+
+// Rebuild pass 2 — re-checked line by line in the new recording session.

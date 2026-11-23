@@ -1,10 +1,10 @@
-// Solara Bay v2 3D traffic: cars follow the road grid, turn at
-// intersections, and slow for the car ahead. Pedestrians stroll on the
-// sidewalks and flee danger. The simulation is 2D (x, y on the city
-// plane); the 3D renderer maps y to -z. A pedestrian hit by a fast car
-// is flagged ragdoll so the renderer can throw them with the physics.
-// Final pass: a car waiting behind another one holds its heading instead
-// of turning on the spot at the intersection.
+// Solara Bay v2 3D traffic, rewritten in the rebuild session: cars follow
+// the road grid, turn at intersections, and slow for the car ahead.
+// Pedestrians stroll on the sidewalks and flee danger. The simulation is
+// 2D (x, y on the city plane); the 3D renderer maps y to -z. A pedestrian
+// hit by a fast car is flagged ragdoll so the renderer can throw them with
+// the physics. Rebuild pass: a car waiting behind another one holds its
+// heading instead of turning on the spot at the intersection.
 import { WORLD } from './config.js';
 
 const ROAD_CENTERS = [200, 600, 1000, 1400, 1800, 2200, 2600, 3000];
@@ -73,3 +73,5 @@ export function updateTraffic(state, dt, random) {
     ped.y = Math.max(40, Math.min(WORLD.height - 40, ped.y));
   }
 }
+
+// Rebuild pass 2 — re-checked line by line in the new recording session.

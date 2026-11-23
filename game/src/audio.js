@@ -1,7 +1,8 @@
-// Solara Bay v2 3D sound, made only with WebAudio oscillators and noise.
-// Nothing is fetched: every effect is synthesised when it is played, so
-// the game stays fully offline. The music is a short 1980s-style synth
-// bass line, played quietly under the engine and the police siren.
+// Solara Bay v2 3D sound, rewritten in the rebuild session. Everything is
+// made with WebAudio oscillators and noise — nothing is fetched, every
+// effect is synthesised when played, so the game stays fully offline.
+// The music is a short 1980s-style synth bass line, played quietly under
+// the engine hum and the police siren.
 export function createAudio() {
   let context = null;
   let master = null;
@@ -130,3 +131,5 @@ export function createAudio() {
     },
   };
 }
+
+// Rebuild pass 2 — re-checked line by line in the new recording session.

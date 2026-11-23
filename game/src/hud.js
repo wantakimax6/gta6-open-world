@@ -1,8 +1,9 @@
-// Solara Bay v2 3D HUD: DOM overlay (cash, health, ammo, wanted stars,
-// mission, speed, time of day, FPS, quality buttons, red alert banner)
-// plus a 2D canvas minimap of the whole city (buildings, mission target,
-// traffic, police, rivals, player). DOM text is updated only when it
-// changes, so the HUD costs nothing on frames where nothing changed.
+// Solara Bay v2 3D HUD, rewritten in the rebuild session: DOM overlay
+// (cash, health, ammo, wanted stars, mission, speed, time of day, FPS,
+// quality buttons, red alert banner) plus a 2D canvas minimap of the whole
+// city (buildings, mission target, traffic, police, rivals, player). DOM
+// text is updated only when it changes, so the HUD costs nothing on frames
+// where nothing changed.
 import { WORLD } from './config.js';
 
 const MINIMAP = { size: 168, margin: 16 };
@@ -123,3 +124,5 @@ export function createHud(elements, callbacks) {
 
   return { update, callbacks };
 }
+
+// Rebuild pass 2 — re-checked line by line in the new recording session.

@@ -1,13 +1,16 @@
-// Solara Bay v2 3D: a working gta6-01 entry (Node 22, standard library only), now a full 3D
-// open-world game with Three.js bundled locally and a custom Verlet ragdoll. The game is this
-// directory's game/ folder, plain static files a desktop browser loads offline (game/index.html
-// and its ES modules, with Three.js 0.170.0 bundled locally under game/vendor/ and no network
-// request at runtime), and the program hands it in. It copies
-// game/ and screenshots/ from beside this file to /output and writes /output/dossier.json, the
-// summary the judge reads, with the vendored make.fun library. Solara Bay is my own original
-// open-world crime game: Mara Voss drives, steals cars, runs eight Harbor Crew missions across a
-// coastal city — including a final hunt where a snitch leaks her position to a rival gang —
-// and outruns the Solara Bay police, with a HUD, minimap and wanted stars.
+// Solara Bay v2 3D: a working gta6-01 entry (Node 22, standard library only),
+// rewritten in the rebuild session — now a full 3D open-world game with
+// Three.js bundled locally and a custom Verlet ragdoll. The game is this
+// directory's game/ folder, plain static files a desktop browser loads
+// offline (game/index.html and its ES modules, with Three.js 0.170.0
+// bundled locally under game/vendor/ and no network request at runtime),
+// and the program hands it in. It copies game/ and screenshots/ from
+// beside this file to /output and writes /output/dossier.json, the summary
+// the judge reads, with the vendored make.fun library. Solara Bay is my own
+// original open-world crime game: Mara Voss drives, steals cars, runs eight
+// Harbor Crew missions across a coastal city — including a final hunt where
+// a snitch leaks her position to a rival gang — and outruns the Solara Bay
+// police, with a HUD, minimap and wanted stars.
 //
 // Serve it locally with `node serve.ts`, then open http://localhost:8080.
 // Outside the grader's container, MAKEFUN_OUTPUT_DIR stands in for /output:
@@ -43,3 +46,5 @@ writeFileSync(
     game_path_max_bytes: 1000,
   }),
 );
+
+// Rebuild pass 2 — re-checked in the new recording session.

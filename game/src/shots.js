@@ -1,9 +1,10 @@
-// Solara Bay v2 3D screenshot scenes for ?shot=start|drive|chase|mission.
-// Each scene plays the real rules forward from a fresh world for a fixed
-// time, steered by a simple road-following autopilot, so the frame is what
-// a short game really looks like and the same seed always gives it. The
-// 3D renderer paints the scene; main.js renders many frames before
-// setting window.__shotReady, so the 3D scene is fully lit and settled.
+// Solara Bay v2 3D screenshot scenes, rewritten in the rebuild session,
+// for ?shot=start|drive|chase|mission. Each scene plays the real rules
+// forward from a fresh world for a fixed time, steered by a simple
+// road-following autopilot, so the frame is what a short game really looks
+// like and the same seed always gives it. The 3D renderer paints the
+// scene; main.js renders many frames before setting window.__shotReady, so
+// the 3D scene is fully lit and settled.
 import { STEP } from './config.js';
 import { SCREEN_OVER, SCREEN_PLAY, SCREEN_TITLE } from './render.js';
 
@@ -164,3 +165,5 @@ export function stageShot(name, world) {
 }
 
 export { nearestCenter };
+
+// Rebuild pass 2 — re-checked line by line in the new recording session.

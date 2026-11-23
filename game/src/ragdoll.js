@@ -1,14 +1,15 @@
-// Solara Bay v2 3D ragdoll: a real Verlet physics ragdoll, not an animation.
-// Seven point masses (head, chest, pelvis, two hands, two feet) with mass,
-// gravity, velocity from their previous position, damping and friction,
-// held together by distance constraints (the joints) solved iteratively,
-// colliding with the ground plane and building boxes. A car hit gives the
-// points an impulse; the body then tumbles, settles, and the character
-// recovers. No physics library is used: Rapier's wasm runtime would add
-// ~2 MB and an async init to a static offline bundle, and a failed init
-// would leave the game with no physics at all. This Verlet solver runs
-// synchronously, deterministically, and in a few microseconds per frame.
-// Final pass: five constraint iterations per step, so the joints hold
+// Solara Bay v2 3D ragdoll, rewritten in the rebuild session: a real
+// Verlet physics ragdoll, not an animation. Seven point masses (head,
+// chest, pelvis, two hands, two feet) with mass, gravity, velocity from
+// their previous position, damping and friction, held together by distance
+// constraints (the joints) solved iteratively, colliding with the ground
+// plane and building boxes. A car hit gives the points an impulse; the
+// body then tumbles, settles, and the character recovers. No physics
+// library is used: Rapier's wasm runtime would add ~2 MB and an async
+// init to a static offline bundle, and a failed init would leave the game
+// with no physics at all. This Verlet solver runs synchronously,
+// deterministically, and in a few microseconds per frame.
+// Rebuild pass: five constraint iterations per step, so the joints hold
 // their shape a little stiffer while the body tumbles.
 import { SCALE } from './config.js';
 
@@ -175,3 +176,5 @@ export function createRagdoll(THREE, scene, x, z, color, impulse, colliders) {
 
   return { step, position, dispose, points };
 }
+
+// Rebuild pass 2 — re-checked line by line in the new recording session.

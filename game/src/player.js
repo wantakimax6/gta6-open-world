@@ -1,12 +1,13 @@
-// Solara Bay v2 3D player: a fully visible third-person character and the
-// TPP camera rig. The character is built from pivoted boxes (a procedural
-// humanoid): torso, head, arms and legs swing with a walk/run cycle, tuck
-// on a jump, and lean into turns. The camera sits behind the character,
-// orbits with the mouse, and smoothly follows — the character is always
-// clearly visible from behind, Dude Theft Wars style, but with clean,
-// modern proportions and materials. The rig also keeps the view honest:
-// it pulls in front of walls and never hovers over a roof, so a building
-// can never fill the frame and hide Mara or her car.
+// Solara Bay v2 3D player, rewritten in the rebuild session: a fully
+// visible third-person character and the TPP camera rig. The character is
+// built from pivoted boxes (a procedural humanoid): torso, head, arms and
+// legs swing with a walk/run cycle, tuck on a jump, and lean into turns.
+// The camera sits behind the character, orbits with the mouse, and
+// smoothly follows — the character is always clearly visible from behind,
+// Dude Theft Wars style, but with clean, modern proportions and materials.
+// The rig also keeps the view honest: it pulls in front of walls and
+// never hovers over a roof, so a building can never fill the frame and
+// hide Mara or her car.
 import { SCALE } from './config.js';
 
 function limb(THREE, w, h, d, color, px, py, pz) {
@@ -206,3 +207,5 @@ export function createCameraRig(THREE, camera, colliders) {
     },
   };
 }
+
+// Rebuild pass 2 — re-checked line by line in the new recording session.

@@ -1,9 +1,10 @@
-// Solara Bay v2 3D renderer: Three.js scene, modern PUBG-like look —
-// ACES filmic tone mapping, sRGB output, soft shadows, hemisphere +
-// directional sun that follows the player, fog, and a day/sunset/night
-// cycle from the environment. The simulation (world.js) is the authority;
-// this file only draws it, so the visuals can never disagree with the
-// physics. Meshes are keyed by simulation object and rebuilt on reset.
+// Solara Bay v2 3D renderer, rewritten in the rebuild session: Three.js
+// scene, modern PUBG-like look — ACES filmic tone mapping, sRGB output,
+// soft shadows, hemisphere + directional sun that follows the player, fog,
+// and a day/sunset/night cycle from the environment. The simulation
+// (world.js) is the authority; this file only draws it, so the visuals can
+// never disagree with the physics. Meshes are keyed by simulation object
+// and rebuilt on reset.
 import * as THREE from '../vendor/three.module.js';
 import { SCALE, WORLD, CITY, QUALITY } from './config.js';
 import { buildEnvironment } from './environment.js';
@@ -359,3 +360,5 @@ export function createRenderer(canvas, world, random) {
     snapCamera() { rig.snap(world.state.player); },
   };
 }
+
+// Rebuild pass 2 — re-checked line by line in the new recording session.

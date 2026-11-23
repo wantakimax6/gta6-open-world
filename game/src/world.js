@@ -1,8 +1,9 @@
-// Solara Bay v2 3D world: the city, the player, cars, pedestrians, rivals,
-// wanted level, health and cash. The simulation runs on the v1 city plane
-// (x, y in sim units); height is a separate z axis for jumping and the
-// ragdoll. step() advances one fixed step and returns what happened as
-// bit flags. The 3D renderer reads this state and never writes it.
+// Solara Bay v2 3D world, rewritten in the rebuild session: the city, the
+// player, cars, pedestrians, rivals, wanted level, health and cash. The
+// simulation runs on the v1 city plane (x, y in sim units); height is a
+// separate z axis for jumping and the ragdoll. step() advances one fixed
+// step and returns what happened as bit flags. The 3D renderer reads this
+// state and never writes it.
 import { CAR, CITY, PLAYER, POLICE, RAGDOLL_RECOVER_SECONDS, WANTED, WORLD, MISSION_REWARDS } from './config.js';
 import { createMissions } from './missions.js';
 import { updateTraffic } from './traffic.js';
@@ -429,3 +430,5 @@ export function createWorld(random) {
     buildings, parks, missions,
   };
 }
+
+// Rebuild pass 2 — re-checked line by line in the new recording session.

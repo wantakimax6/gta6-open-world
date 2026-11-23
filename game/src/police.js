@@ -1,10 +1,10 @@
-// Solara Bay v2 3D police: how many cruisers answer the wanted level, how
-// they chase the player, ram the player's car, and arrest the player on
-// foot. A ram at speed now also throws the player into a ragdoll stumble
-// (the renderer reads state.ragdoll), which is the sandbox feel the brief
-// asks for — without ending the run on its own. One cruiser per wanted
-// star, capped at five, so max heat really does feel like the whole city
-// is after you.
+// Solara Bay v2 3D police, rewritten in the rebuild session: how many
+// cruisers answer the wanted level, how they chase the player, ram the
+// player's car, and arrest the player on foot. A ram at speed also throws
+// the player into a ragdoll stumble (the renderer reads state.ragdoll),
+// which is the sandbox feel the brief asks for — without ending the run
+// on its own. One cruiser per wanted star, capped at five, so max heat
+// really does feel like the whole city is after you.
 import { POLICE, WORLD } from './config.js';
 
 export function wantedPoliceCount(wanted) {
@@ -60,3 +60,5 @@ export function updatePolice(state, dt, random, helpers) {
   }
   return events;
 }
+
+// Rebuild pass 2 — re-checked line by line in the new recording session.

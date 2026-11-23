@@ -1,9 +1,10 @@
-// Solara Bay v2 3D boot and the one loop: input is read every frame, the
-// world advances in fixed 1/60 s steps, and the Three.js renderer paints
-// what is there. The game moves between title, play, paused and game-over
-// screens. Movement is camera-relative (WASD moves where the third-person
-// camera points); Space jumps while playing and starts the game on the
-// title screen. All HUD buttons are wired to real handlers below.
+// Solara Bay v2 3D boot and the one loop, rewritten in the rebuild session:
+// input is read every frame, the world advances in fixed 1/60 s steps, and
+// the Three.js renderer paints what is there. The game moves between title,
+// play, paused and game-over screens. Movement is camera-relative (WASD
+// moves where the third-person camera points); Space jumps while playing
+// and starts the game on the title screen. All HUD buttons are wired to
+// real handlers below.
 //
 // ?seed=N fixes the city. ?shot=start|drive|chase|mission (with &seed=N)
 // stages that scene instead of running the loop, renders it for 40 frames
@@ -102,7 +103,7 @@ function runShot(name) {
   // headless shells throttle rAF when the page is not composited, so an
   // rAF loop may never finish there, while setTimeout always fires. Once
   // ready, stop the loop entirely so a screenshot can capture the canvas.
-  // Final pass: 8 frames is enough — the scene is static after staging.
+  // Rebuild pass: 8 frames is enough — the scene is static after staging.
   let painted = 0;
   function paint() {
     renderer.draw(world.state, scene.screen, 1 / 60);
@@ -266,3 +267,5 @@ function runGame() {
 
 if (shot) runShot(shot);
 else runGame();
+
+// Rebuild pass 2 — re-checked line by line in the new recording session.

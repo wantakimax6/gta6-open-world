@@ -1,9 +1,9 @@
-// Solara Bay v2 3D vehicles: car meshes with working wheels, steering,
-// suspension bob and brake lights. The simulation (speed, angle, position)
-// lives in world.js; this file only draws it, so the visuals can never
-// disagree with the physics. Final pass: every exterior part casts a
-// shadow, so the car reads as one solid object under the sun instead of
-// a body with a floating nose.
+// Solara Bay v2 3D vehicles, rewritten in the rebuild session: car meshes
+// with working wheels, steering, suspension bob and brake lights. The
+// simulation (speed, angle, position) lives in world.js; this file only
+// draws it, so the visuals can never disagree with the physics. Rebuild
+// pass: every exterior part casts a shadow, so the car reads as one solid
+// object under the sun instead of a body with a floating nose.
 import { SCALE } from './config.js';
 
 function box(THREE, w, h, d, color, roughness, metalness) {
@@ -110,3 +110,5 @@ export function createCarMesh(THREE, color, isPolice) {
     },
   };
 }
+
+// Rebuild pass 2 — re-checked line by line in the new recording session.

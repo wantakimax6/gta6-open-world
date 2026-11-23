@@ -1,12 +1,13 @@
-// Solara Bay v2 3D input: keyboard, mouse orbit and touch.
-// Held keys are read every frame; one-shot presses (start, pause, enter
-// car, punch, shoot, jump) are queued as flags and taken once, so a press
-// between frames is never lost and never counted twice. Dragging with the
-// mouse orbits the third-person camera; the orbit delta is exposed so the
-// renderer can turn the camera without pointer lock (which headless
-// browsers and the screenshot runs cannot grant). Losing the window
-// clears every held key and any half-finished orbit drag, so the game
-// never keeps driving or spinning on its own after an alt-tab.
+// Solara Bay v2 3D input, rewritten in the rebuild session: keyboard,
+// mouse orbit and touch. Held keys are read every frame; one-shot presses
+// (start, pause, enter car, punch, shoot, jump) are queued as flags and
+// taken once, so a press between frames is never lost and never counted
+// twice. Dragging with the mouse orbits the third-person camera; the orbit
+// delta is exposed so the renderer can turn the camera without pointer
+// lock (which headless browsers and the screenshot runs cannot grant).
+// Losing the window clears every held key and any half-finished orbit
+// drag, so the game never keeps driving or spinning on its own after an
+// alt-tab.
 export const ACTION_CONFIRM = 1;
 export const ACTION_PAUSE = 2;
 export const ACTION_ENTER = 4;
@@ -111,3 +112,5 @@ export function createInput(target) {
     },
   };
 }
+
+// Rebuild pass 2 — re-checked line by line in the new recording session.

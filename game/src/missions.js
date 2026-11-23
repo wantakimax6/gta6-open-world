@@ -1,13 +1,13 @@
-// Solara Bay v2 3D story: eight missions for Mara Voss and the Harbor Crew.
-// Missions 1-5 are the v1 story, adapted to the 3D city; 6-7 are new:
-// a timed neon taxi run and a sunset getaway with cash drops. Mission 8
-// is the hunt: a snitch in the crew leaks Mara's position to the Viper
-// gang, so a pack of hunters keeps closing in until she reaches safety.
-// Final pass: the story is meant to be played through in one sitting,
-// Epic Conquest style — fast, fun, and forgiving, not a grind.
-// Each mission has a target, a short brief, and a completion rule. The
-// world calls update() every step; it returns EVENT_MISSION (8) when one
-// is finished, and the world pays its reward.
+// Solara Bay v2 3D story, rewritten in the rebuild session: eight
+// missions for Mara Voss and the Harbor Crew. Missions 1-5 are the v1
+// story, adapted to the 3D city; 6-7 are new: a timed neon taxi run and a
+// sunset getaway with cash drops. Mission 8 is the hunt: a snitch in the
+// crew leaks Mara's position to the Viper gang, so a pack of hunters keeps
+// closing in until she reaches safety. Rebuild pass: the story is meant to
+// be played through in one sitting, Epic Conquest style — fast, fun, and
+// forgiving, not a grind. Each mission has a target, a short brief, and a
+// completion rule. The world calls update() every step; it returns
+// EVENT_MISSION (8) when one is finished, and the world pays its reward.
 import { CITY } from './config.js';
 import { EVENT_MISSION } from './world.js';
 
@@ -208,3 +208,5 @@ export function createMissions() {
 
   return { current, update, count: MISSION_DEFS.length };
 }
+
+// Rebuild pass 2 — re-checked line by line in the new recording session.

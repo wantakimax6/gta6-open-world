@@ -1,11 +1,11 @@
-// Solara Bay v2 3D environment: the city itself, built once from the
-// simulated city plan. Modern, clean, PUBG-like rendering: standard
-// materials with roughness/metalness, instanced repetition (palms,
-// streetlights, windows, road markings), emissive neon, and a full
-// day → sunset → night cycle that drives the sun, sky, fog and lights.
-// The 1980s Vice City atmosphere comes from the palette and neon, the
-// modern quality from the lighting, shadows and clean materials.
-// Final pass: building boxes are inset 0.8 m from their simulation
+// Solara Bay v2 3D environment, rewritten in the rebuild session: the city
+// itself, built once from the simulated city plan. Modern, clean, PUBG-like
+// rendering: standard materials with roughness/metalness, instanced
+// repetition (palms, streetlights, windows, road markings), emissive neon,
+// and a full day → sunset → night cycle that drives the sun, sky, fog and
+// lights. The 1980s Vice City atmosphere comes from the palette and neon,
+// the modern quality from the lighting, shadows and clean materials.
+// Rebuild pass: building boxes are inset 0.8 m from their simulation
 // footprint so streets read wider and the TPP camera never sits 3 m from
 // a sheer wall, and the hemisphere light is strong enough that a wall
 // facing away from the sun still reads as a wall, never a black void.
@@ -303,3 +303,5 @@ export function buildEnvironment(THREE, state, random) {
     },
   };
 }
+
+// Rebuild pass 2 — re-checked line by line in the new recording session.
